@@ -1,0 +1,62 @@
+public class PredictCodeCompletionCommentSample {
+
+  public static void main(String[] args) throws IOException {
+    // TODO(developer): Replace this variable before running the sample.
+    String project = "YOUR_PROJECT_ID";
+
+    // Learn how to create prompts to work with a code model to create code completion suggestions:
+    // https://cloud.google.com/vertex-ai/docs/generative-ai/code/code-completion-prompts
+    String instance =
+        "{ \"prefix\": \""
+            + "def reverse_string(s):\n"
+            + "  return s[::-1]\n"
+            + "#This function"
+            + "\"}";
+    String parameters = "{\n" + "  \"temperature\": 0.2,\n" + "  \"maxOutputTokens\": 64,\n" + "}";
+    String location = "us-central1";
+    String publisher = "google";
+    String model = "code-gecko@001";
+
+    predictComment(instance, parameters, project, location, publisher, model);
+  }
+
+  // Use Code Completion to complete a code comment
+  public static void predictComment(
+      String instance,
+      String parameters,
+      String project,
+      String location,
+      String publisher,
+      String model)
+      throws IOException {
+    final String endpoint = String.format("%s-aiplatform.googleapis.com:443", location);
+    PredictionServiceSettings predictionServiceSettings =
+        PredictionServiceSettings.newBuilder().setEndpoint(endpoint).build();
+
+    // Initialize client that will be used to send requests. This client only needs to be created
+    // once, and can be reused for multiple requests.
+    try (PredictionServiceClient predictionServiceClient =
+        PredictionServiceClient.create(predictionServiceSettings)) {
+      final EndpointName endpointName =
+          EndpointName.ofProjectLocationPublisherModelName(project, location, publisher, model);
+
+      Value instanceValue = stringToValue(instance);
+      List<Value> instances = new ArrayList<>();
+      instances.add(instanceValue);
+
+      Value parameterValue = stringToValue(parameters);
+
+      PredictResponse predictResponse =
+          predictionServiceClient.predict(endpointName, instances, parameterValue);
+      System.out.println("Predict Response");
+      System.out.println(predictResponse);
+    }
+  }
+
+  // Convert a Json string to a protobuf.Value
+  static Value stringToValue(String value) throws InvalidProtocolBufferException {
+    Value.Builder builder = Value.newBuilder();
+    JsonFormat.parser().merge(value, builder);
+    return builder.build();
+  }
+}
